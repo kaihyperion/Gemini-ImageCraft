@@ -1,4 +1,4 @@
-// node.js image gneerationl logic here
+// node.js image generation logic here
 import { GoogleGenAI } from "@google/genai";
 import sharp from 'sharp';
 
@@ -11,7 +11,7 @@ export async function generateOneImageFromText(prompt: string) {
     if (!process.env.GEMINI_API_KEY) {
         throw new Error("GEMINI_API_KEY is not set");
     }
-    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY});
+    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
     // Add portrait aspect ratio specification to the prompt
     const enhancedPrompt = `${prompt}, portrait orientation, vertical composition, aspect ratio 2:3, full body shot`;
@@ -29,7 +29,7 @@ export async function generateOneImageFromText(prompt: string) {
             if (part.text) {
                 console.log(part.text);
             } else if (part.inlineData) {
-                const imageData = part.inlineData.data;  // base64-enccoded string
+                const imageData = part.inlineData.data;  // base64-encoded string
                 if (imageData) {
                     return `data:image/png;base64,${imageData}`;
                 } else {
@@ -41,7 +41,10 @@ export async function generateOneImageFromText(prompt: string) {
 }
 
 export async function generateOneImageFromImage(baseImage: string, prompt?: string) {
-    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY});
+    if (!process.env.GEMINI_API_KEY) {
+        throw new Error("GEMINI_API_KEY is not set");
+    }
+    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
     // Remove the data URL prefix if present
     const base64Image = baseImage.replace(/^data:image\/\w+;base64,/, '');
