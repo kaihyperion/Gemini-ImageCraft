@@ -10,6 +10,7 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
+import Image from "next/image";
 
 export default function Home() {
   const [singleImage, setSingleImage] = useState<string | null>(null);
@@ -121,7 +122,7 @@ export default function Home() {
             />
             {imageFromImage && (
               <div className="mt-4">
-                <img src={imageFromImage} alt="Generated" className="max-w-[400px] w-full h-auto object-contain mx-auto" />
+                <Image src={imageFromImage} alt="Generated" width={400} height={400} className="max-w-[400px] w-full h-auto object-contain mx-auto" />
               </div>
             )}
           </div>
@@ -133,7 +134,7 @@ export default function Home() {
             />
             {singleImage && (
               <div className="mt-4">
-                <img src={singleImage} alt="Generated" className="max-w-[400px] w-full h-auto object-contain mx-auto" />
+                <Image src={singleImage} alt="Generated" width={400} height={400} className="max-w-[400px] w-full h-auto object-contain mx-auto" />
               </div>
             )}
           </div>
@@ -158,9 +159,11 @@ export default function Home() {
                             onClick={() => setSelectedImage(selectedImage === image ? null : image)}
                           >
                             <CardContent className="flex items-center justify-center p-6">
-                              <img
+                              <Image
                                 src={image}
                                 alt={`Generated ${index + 1}`}
+                                width={400}
+                                height={400}
                                 className="w-full h-auto object-contain"
                               />
                             </CardContent>

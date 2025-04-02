@@ -20,6 +20,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
+import Image from "next/image";
 
 interface ImageGenerationDrawerProps {
   onGenerate: (prompt: string, baseImage?: string) => Promise<void>;
@@ -114,9 +115,11 @@ Description: A driven and ambitious news anchor, secretly the leader of a vigila
                 />
                 {selectedImage && (
                   <div className="mt-2">
-                    <img
+                    <Image
                       src={selectedImage}
                       alt="Selected"
+                      width={200}
+                      height={200}
                       className="max-w-[200px] h-auto rounded-md"
                     />
                   </div>
