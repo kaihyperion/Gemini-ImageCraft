@@ -15,6 +15,7 @@ import Image from "next/image";
 export default function Home() {
   const [singleImage, setSingleImage] = useState<string | null>(null);
   const [imageFromImage, setImageFromImage] = useState<string | null>(null);
+  const [baseImages, setBaseImages] = useState<string[]>([]);
   const [threeImages, setThreeImages] = useState<string[] | null>(null);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
@@ -40,26 +41,51 @@ export default function Home() {
   };
 
   const handleGenerateSingleImageFromImage = async (prompt: string, baseImage?: string) => {
-    if (!baseImage) {
+    if (!baseImage && baseImages.length === 0) {
       console.error("No base image provided");
       return;
     }
 
+    console.log(`Generating image with prompt: "${prompt}"`);
+    console.log(`Using ${baseImage ? 1 : baseImages.length} base image(s)`);
+    
+    // Create a new array with all images
+    const imagesToUse = [...baseImages];
+    
+    // If a new image is uploaded, add it to the array
+    if (baseImage && !imagesToUse.includes(baseImage)) {
+      console.log("Adding newly uploaded image to imagesToUse array");
+      imagesToUse.push(baseImage);
+      
+      // Also update the state for future use
+      setBaseImages(imagesToUse);
+    }
+    
+    console.log(`Sending ${imagesToUse.length} images to API`);
+
     try {
+      console.log("Sending request to API");
       const response = await fetch("/api/generate-one-image-from-image", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ baseImage, prompt }),
+        body: JSON.stringify({ 
+          baseImages: imagesToUse, 
+          prompt 
+        }),
       });
 
       if (!response.ok) {
+        console.error(`API request failed with status: ${response.status}`);
         throw new Error("Failed to generate image");
       }
 
+      console.log("API request successful, processing response");
       const data = await response.json();
+      console.log("Response processed, setting generated image");
       setImageFromImage(data.image);
+      console.log("Generated image set successfully");
     } catch (error) {
       console.error("Error generating image:", error);
     }
@@ -108,6 +134,24 @@ export default function Home() {
     }
   };
 
+  const handleAddBaseImage = (image: string) => {
+    console.log("Adding new base image");
+    setBaseImages(prev => {
+      const newImages = [...prev, image];
+      console.log(`Base images updated, now have ${newImages.length} images`);
+      return newImages;
+    });
+  };
+
+  const handleRemoveBaseImage = (index: number) => {
+    console.log(`Removing base image at index ${index}`);
+    setBaseImages(prev => {
+      const newImages = prev.filter((_, i) => i !== index);
+      console.log(`Base images updated, now have ${newImages.length} images`);
+      return newImages;
+    });
+  };
+
   return (
     <main className="flex min-h-screen flex-col items-center justify-between p-24">
       <div className="z-10 max-w-5xl w-full items-center justify-between font-mono text-sm">
@@ -118,11 +162,37 @@ export default function Home() {
             <h2 className="text-2xl font-semibold mb-4">Generate Single Image from another image</h2>
             <ImageGenerationDrawer
               onGenerate={handleGenerateSingleImageFromImage}
+              onAddBaseImage={handleAddBaseImage}
               triggerText="Generate Image from Image"
             />
+            {baseImages.length > 0 && (
+              <div className="mt-4">
+                <h3 className="text-xl font-medium mb-2">Base Images:</h3>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {baseImages.map((image, index) => (
+                    <div key={index} className="relative">
+                      <Image 
+                        src={image} 
+                        alt={`Base ${index + 1}`} 
+                        width={200} 
+                        height={112} 
+                        className="w-full h-auto object-contain rounded-md" 
+                      />
+                      <button
+                        onClick={() => handleRemoveBaseImage(index)}
+                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
             {imageFromImage && (
               <div className="mt-4">
-                <Image src={imageFromImage} alt="Generated" width={400} height={400} className="max-w-[400px] w-full h-auto object-contain mx-auto" />
+                <h3 className="text-xl font-medium mb-2">Generated Image:</h3>
+                <Image src={imageFromImage} alt="Generated" width={400} height={225} className="w-full h-auto object-contain mx-auto" />
               </div>
             )}
           </div>
@@ -134,7 +204,7 @@ export default function Home() {
             />
             {singleImage && (
               <div className="mt-4">
-                <Image src={singleImage} alt="Generated" width={400} height={400} className="max-w-[400px] w-full h-auto object-contain mx-auto" />
+                <Image src={singleImage} alt="Generated" width={400} height={225} className="w-full h-auto object-contain mx-auto" />
               </div>
             )}
           </div>
@@ -163,7 +233,7 @@ export default function Home() {
                                 src={image}
                                 alt={`Generated ${index + 1}`}
                                 width={400}
-                                height={400}
+                                height={225}
                                 className="w-full h-auto object-contain"
                               />
                             </CardContent>

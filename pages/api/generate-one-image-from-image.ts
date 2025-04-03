@@ -16,14 +16,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     try {
-        const { baseImage, prompt } = req.body;
+        const { baseImages, prompt } = req.body;
         
-        if (!baseImage) {
-            return res.status(400).json({ message: 'Base image is required' });
+        console.log(`API request received with ${Array.isArray(baseImages) ? baseImages.length : 1} base image(s)`);
+        console.log(`baseImages type: ${typeof baseImages}, isArray: ${Array.isArray(baseImages)}`);
+        if (Array.isArray(baseImages)) {
+            console.log(`baseImages array length: ${baseImages.length}`);
+            console.log(`First image data length: ${baseImages[0]?.length || 0}`);
+        }
+        
+        if (!baseImages || (Array.isArray(baseImages) && baseImages.length === 0)) {
+            console.error("No base images provided in request");
+            return res.status(400).json({ message: 'At least one base image is required' });
         }
 
         // Generate a new variation of the image with the provided prompt
-        const image = await generateOneImageFromImage(baseImage, prompt);
+        console.log("Calling generateOneImageFromImage function");
+        const image = await generateOneImageFromImage(baseImages, prompt);
+        console.log("Image generation completed successfully");
 
         res.status(200).json({ image });
     } catch (err) {
