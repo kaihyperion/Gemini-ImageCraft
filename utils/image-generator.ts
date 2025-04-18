@@ -40,7 +40,43 @@ export async function generateOneImageFromText(prompt: string) {
     }
 }
 
-export async function generateOneImageFromImage(baseImages: string | string[], prompt?: string) {
+export async function addCharacterNameToPortrait(base64Image: string, characterName: string): Promise<string> {
+    // Convert base64 to buffer
+    const imageBuffer = Buffer.from(base64Image, 'base64');
+    
+    // Create a new image with text overlay
+    const image = sharp(imageBuffer);
+    
+    // Get image metadata
+    const metadata = await image.metadata();
+    const width = metadata.width || 384;
+    const height = metadata.height || 384;
+    
+    // Create SVG text overlay with background
+    const svgText = `
+        <svg width="${width}" height="${height}">
+            <style>
+                .title { fill: white; font-size: 24px; font-weight: bold; }
+                .background { fill: rgba(0, 0, 0, 0.5); }
+            </style>
+            <rect x="0" y="0" width="${width}" height="40" class="background" />
+            <text x="10" y="30" class="title">${characterName}</text>
+        </svg>
+    `;
+    
+    // Composite the text onto the image
+    const processedBuffer = await image
+        .composite([{
+            input: Buffer.from(svgText),
+            top: 0,
+            left: 0,
+        }])
+        .toBuffer();
+    
+    return processedBuffer.toString('base64');
+}
+
+export async function generateOneImageFromImage(baseImages: string | string[], prompt?: string, characterNames?: string[]) {
     if (!process.env.GEMINI_API_KEY) {
         throw new Error("GEMINI_API_KEY is not set");
     }
@@ -48,21 +84,24 @@ export async function generateOneImageFromImage(baseImages: string | string[], p
 
     // Convert single image to array for consistent handling
     const imagesArray = Array.isArray(baseImages) ? baseImages : [baseImages];
+    const namesArray = characterNames || imagesArray.map((_, i) => `Character ${i + 1}`);
+    
     console.log(`Processing ${imagesArray.length} base image(s)`);
-    console.log(`baseImages type: ${typeof baseImages}, isArray: ${Array.isArray(baseImages)}`);
-    console.log(`imagesArray length: ${imagesArray.length}`);
+    console.log(`Character names: ${namesArray.join(', ')}`);
     
     // Process all images
     const processedImages = await Promise.all(imagesArray.map(async (baseImage, index) => {
-        console.log(`Processing base image ${index + 1}/${imagesArray.length}`);
-        console.log(`Base image ${index + 1} data length: ${baseImage.length}`);
+        console.log(`Processing base image ${index + 1}/${imagesArray.length} for character ${namesArray[index]}`);
+        
         // Remove the data URL prefix if present
         const base64Image = baseImage.replace(/^data:image\/\w+;base64,/, '');
-        console.log(`Base image ${index + 1} data URL prefix removed`);
         
-        // Compress the image by reducing its quality
-        const compressedImage = await compressImage(base64Image);
-        console.log(`Base image ${index + 1} compressed successfully`);
+        // Add character name to the image
+        const imageWithName = await addCharacterNameToPortrait(base64Image, namesArray[index]);
+        
+        // Compress the image
+        const compressedImage = await compressImage(imageWithName);
+        console.log(`Base image ${index + 1} processed successfully`);
         return compressedImage;
     }));
 
@@ -71,7 +110,7 @@ export async function generateOneImageFromImage(baseImages: string | string[], p
     // Create contents array with prompt and all images
     const contents: Array<{ text: string } | { inlineData: { mimeType: string; data: string } }> = [
         {
-            text: prompt || "Generate a variation of these images while maintaining the same style and subject, but with slight differences in pose, expression, or background. Keep the 16:9 aspect ratio."
+            text: prompt || "Keep the 16:9 aspect ratio."
         }
     ];
     
@@ -123,8 +162,10 @@ async function compressImage(base64Image: string): Promise<string> {
     const imageBuffer = Buffer.from(base64Image, 'base64');
     
     // Use sharp to compress the image
+    // Resize to optimal dimensions for Gemini token calculation
+    // Using 384x384 as the maximum dimension to stay within the 258 token limit
     const compressedBuffer = await sharp(imageBuffer)
-        .resize(800, 1200, { // Maintain 2:3 aspect ratio
+        .resize(384, 384, {
             fit: 'contain',
             background: { r: 255, g: 255, b: 255, alpha: 0 }
         })

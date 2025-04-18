@@ -21,6 +21,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import Image from "next/image";
+import { CharacterManager } from "@/components/character-manager";
+import { Character } from "@/lib/supabase";
 
 interface ImageGenerationDrawerProps {
   onGenerate: (prompt: string, baseImage?: string) => Promise<void>;
@@ -77,6 +79,20 @@ export function ImageGenerationDrawer({
     });
   };
 
+  const handleCharacterSelect = (character: Character) => {
+    const imageData = `data:image/png;base64,${character.image_data}`;
+    setSelectedImages(prev => {
+      const newImages = [...prev, imageData];
+      console.log(`Selected images updated with character, now have ${newImages.length} images`);
+      return newImages;
+    });
+    
+    if (onAddBaseImage) {
+      console.log(`Adding character image to base images collection`);
+      onAddBaseImage(imageData);
+    }
+  };
+
   const handleGenerate = async () => {
     if (!prompt.trim()) return;
     
@@ -110,7 +126,7 @@ export function ImageGenerationDrawer({
             <DrawerTitle>Generate Image</DrawerTitle>
             <div className="space-y-4">
               <DrawerDescription>
-                Enter a prompt and optionally upload images to generate variations.
+                Enter a prompt and optionally upload images or select saved characters to generate variations.
               </DrawerDescription>
               <div className="text-sm space-y-2">
                 <span>Create detailed images by following these prompt guidelines:</span>
@@ -144,14 +160,17 @@ Description: A driven and ambitious news anchor, secretly the leader of a vigila
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="image">Upload Images (Optional)</Label>
-                <Input
-                  id="image"
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  onChange={handleImageUpload}
-                />
+                <Label>Select Images</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="image"
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={handleImageUpload}
+                  />
+                  <CharacterManager onSelectCharacter={handleCharacterSelect} />
+                </div>
                 {selectedImages.length > 0 && (
                   <div className="mt-2 grid grid-cols-2 md:grid-cols-3 gap-2">
                     {selectedImages.map((image, index) => (

@@ -11,6 +11,8 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 import Image from "next/image";
+import { CharacterManager } from "@/components/character-manager"
+import { SaveCharacter } from "@/components/save-character"
 
 export default function Home() {
   const [singleImage, setSingleImage] = useState<string | null>(null);
@@ -155,7 +157,10 @@ export default function Home() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-between p-24">
       <div className="z-10 max-w-5xl w-full items-center justify-between font-mono text-sm">
-        <h1 className="text-4xl font-bold mb-8">AI Image Generator</h1>
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-bold">Character Generator</h1>
+          <CharacterManager />
+        </div>
         
         <div className="space-y-8">
           <div>
@@ -193,6 +198,7 @@ export default function Home() {
               <div className="mt-4">
                 <h3 className="text-xl font-medium mb-2">Generated Image:</h3>
                 <Image src={imageFromImage} alt="Generated" width={400} height={225} className="w-full h-auto object-contain mx-auto" />
+                <SaveCharacter imageData={imageFromImage} />
               </div>
             )}
           </div>
@@ -205,6 +211,7 @@ export default function Home() {
             {singleImage && (
               <div className="mt-4">
                 <Image src={singleImage} alt="Generated" width={400} height={225} className="w-full h-auto object-contain mx-auto" />
+                <SaveCharacter imageData={singleImage} />
               </div>
             )}
           </div>
@@ -223,12 +230,12 @@ export default function Home() {
                       <CarouselItem key={index}>
                         <div className="p-1">
                           <Card 
-                            className={`cursor-pointer transition-all duration-200 ${
+                            className={`cursor-pointer transition-all ${
                               selectedImage === image ? 'ring-4 ring-blue-500' : ''
                             }`}
                             onClick={() => setSelectedImage(selectedImage === image ? null : image)}
                           >
-                            <CardContent className="flex items-center justify-center p-6">
+                            <CardContent className="flex flex-col items-center justify-center p-6">
                               <Image
                                 src={image}
                                 alt={`Generated ${index + 1}`}
@@ -236,6 +243,9 @@ export default function Home() {
                                 height={225}
                                 className="w-full h-auto object-contain"
                               />
+                              <div className="mt-4">
+                                <SaveCharacter imageData={image} />
+                              </div>
                             </CardContent>
                           </Card>
                         </div>
@@ -249,7 +259,7 @@ export default function Home() {
                   <div className="mt-4 flex justify-center">
                     <button
                       onClick={() => handleGenerateMoreImages(selectedImage)}
-                      className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
+                      className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
                     >
                       Generate More Like This
                     </button>
